@@ -1,17 +1,44 @@
-import User from '../models/User.js';
-import { registerUserService } from '../services/authService.js';
+import { loginUserService, registerUserService, getUserData } from '../services/authService.js';
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
-    const { name, email, hashedPassword } = await registerUserService(req.body);
-
-    const newUser = await User.create({ name, email, password: hashedPassword });
+    const user = await registerUserService(req.body);
     return res.status(201).json({
       message: 'User registered successfully',
-      user: { id: newUser._id, name: newUser.name, email: newUser.email },
+      data: {
+        user,
+      },
     });
   } catch (error) {
-    console.error('Register Error:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    next(error);
+  }
+};
+
+export const loginUser = async (req, res, next) => {
+  try {
+    const { token, user } = await loginUserService(req.body);
+    return res.status(200).json({
+      message: 'User authenticated successfully',
+      data: {
+        token,
+        user,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserProfile = async (req, res, next) => {
+  try {
+    const userData = await getUserData(req.user);
+    return res.status(200).json({
+      message: 'Data retrieved successfully',
+      data: {
+        user: userData,
+      },
+    });
+  } catch (err) {
+    next(err);
   }
 };

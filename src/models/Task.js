@@ -15,8 +15,8 @@ import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String },
+    title: { type: String, required: true, lowercase: true, trim: true, minlength: 3, maxlength: 100 },
+    description: { type: String, required: true, trim: true },
     status: { type: String, enum: ['todo', 'in-progress', 'done'], default: 'todo' },
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -25,5 +25,8 @@ const taskSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+taskSchema.index({ project: 1 }); // index to optimize queries by project
+taskSchema.index({ status: 1 }); // index to optimize queries by status
+taskSchema.index({ title: 1, project: 1 }, { unique: true }); // unique index to prevent duplicate task titles within the same project
 const Task = mongoose.model('Task', taskSchema);
 export default Task;

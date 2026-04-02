@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', AuthRoute);
 app.use('/api/user', UserRoute);
 app.use('/api/projects', ProjectRoute);
-app.use('/api/tasks', TaskRoute);
+// app.use('/api/tasks', TaskRoute);
 
 // handle unmatched routes
 app.use(unmatchedRouteHandler);

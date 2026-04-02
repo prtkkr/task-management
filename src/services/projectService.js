@@ -1,26 +1,31 @@
 import Project from '../models/Project.js';
+import Task from '../models/Task.js';
 import CustomError from '../utils/CustomError.js';
 
 export const createProject = async (project, userId) => {
   let { title, description } = project;
+
   title = title ? title.trim() : undefined;
   description = description ? description.trim() : undefined;
 
   if (!title) throw new CustomError('Project title is required', 400);
   if (!description) throw new CustomError('Project description is required', 400);
 
-  const existingProject = await Project.findOne({ title: title, user: userId });
-  if (existingProject) {
-    throw new CustomError('Project with the same title already exists', 400);
+  try {
+    const newProject = await Project.create({ title: title, description: description, user: userId });
+    return {
+      id: newProject._id,
+      title: newProject.title,
+      description: newProject.description,
+      createdAt: newProject.createdAt,
+      updatedAt: newProject.updatedAt,
+    };
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new CustomError('Project with the same title already exists for this user', 400);
+    }
+    throw error;
   }
-
-  const newProject = await Project.create({ title: title, description: description, user: userId });
-  return {
-    id: newProject._id,
-    title: newProject.title,
-    description: newProject.description,
-    createdAt: newProject.createdAt,
-  };
 };
 
 export const fetchProject = async (userId, projectId = null) => {
@@ -101,4 +106,48 @@ export const deleteProjectService = async (userId, projectId) => {
     throw new CustomError('Failed to delete project', 500);
   }
   return;
+};
+
+// tasks
+export const createTask = async (projectId, userId, taskData) => {
+  const projectExists = await Project.exists({ _id: projectId, user: userId });
+  if (!projectExists) {
+    throw new CustomError('Project not found', 404);
+  }
+
+  let { title, description, status, assignedTo, dueDate, attachment } = taskData;
+
+  title = title ? title.trim() : undefined;
+  description = description ? description.trim() : undefined;
+
+  if (!title) throw new CustomError('Task title is required', 400);
+  if (!description) throw new CustomError('Task description is required', 400);
+
+  try {
+    const newTask = await Task.create({
+      title,
+      description,
+      status,
+      project: projectId,
+      assignedTo,
+      dueDate,
+      attachment,
+    });
+    return {
+      id: newTask._id,
+      title: newTask.title,
+      description: newTask.description,
+      status: newTask.status,
+      assignedTo: newTask.assignedTo,
+      dueDate: newTask.dueDate,
+      attachments: newTask.attachments,
+      createdAt: newTask.createdAt,
+      updatedAt: newTask.updatedAt,
+    };
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new CustomError('Task with the same title already exists in this project', 400);
+    }
+    throw error;
+  }
 };
